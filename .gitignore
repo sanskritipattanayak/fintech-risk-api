@@ -1,0 +1,19 @@
+# Presenter-only notes (name the seeded bug); keep outside the repo
+DEMO_IDEA.md
+IMPLEMENTATION_PLAN.md
+
+# Secrets
+.env
+.env.*
+secrets/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local tooling
+.claude/settings.local.json
+.DS_Store

@@ -1,0 +1,11 @@
+# Default reviewer for everything
+*                       @sanskritip-png
+
+# Risk-sensitive logic: limits, thresholds, scoring. In a real org this is the risk team.
+/app/velocity.py        @sanskritip-png
+/app/model.py           @sanskritip-png
+
+# Guardrails and pipeline: changes here weaken or alter controls
+/.claude/               @sanskritip-png
+/.github/               @sanskritip-png
+/CLAUDE.md              @sanskritip-png

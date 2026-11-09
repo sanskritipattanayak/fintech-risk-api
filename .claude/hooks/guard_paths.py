@@ -16,6 +16,7 @@ from common import ask, deny, project_dir, read_input
 PRESENTER_ONLY = {"DEMO_IDEA.md", "IMPLEMENTATION_PLAN.md"}
 WRITE_TOOLS = {"Edit", "Write", "NotebookEdit", "MultiEdit"}
 CONTROL_PATHS = (
+    ".githooks/",
     ".claude/settings.json",
     ".claude/hooks/",
     ".github/workflows/",

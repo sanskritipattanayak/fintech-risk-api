@@ -38,33 +38,60 @@ def current_branch() -> str:
     return out.stdout.strip()
 
 
-def commit_gate(cmd: str) -> None:
-    root = project_dir()
-    scan = subprocess.run(
-        [sys.executable, os.path.join(HERE, "dlp.py"), "staged"],
+def run_dlp(*args: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, os.path.join(HERE, "dlp.py"), *args],
         capture_output=True,
         text=True,
-        cwd=root,
+        cwd=project_dir(),
     )
-    if scan.returncode != 0:
-        deny(
-            "PreToolUse",
-            "commit-dlp",
-            "staged changes contain restricted data or secrets. Remove or tokenise them.\n"
-            + scan.stdout.strip(),
-            "Bash",
-            cmd,
-        )
+
+
+def tests_green() -> tuple[bool, str]:
+    root = project_dir()
     py = root / ".venv" / "bin" / "python"
-    tests = subprocess.run(
+    r = subprocess.run(
         [str(py if py.exists() else sys.executable), "-m", "pytest", "-q", "-x"],
         capture_output=True,
         text=True,
         cwd=root,
     )
-    if tests.returncode != 0:
-        tail = "\n".join(tests.stdout.strip().splitlines()[-15:])
-        deny("PreToolUse", "commit-tests", "tests must pass before commit.\n" + tail, "Bash", cmd)
+    tail = "\n".join(r.stdout.strip().splitlines()[-15:])
+    return r.returncode in (0, 5), tail  # 5 = no tests collected
+
+
+def outgoing_gates(cmd: str, kind: str) -> None:
+    """Scan what is ABOUT to be committed / pushed / put in a PR, then run the tests.
+
+    This hook fires before the command runs, so a chained `git add && git commit` has
+    not staged anything yet. We therefore scan the working tree (a superset of whatever
+    the commit could pick up) whenever the command stages files itself, and scan the
+    outgoing commits (BASE...HEAD) for push and PR creation.
+    """
+    has_add = re.search(r"\bgit\s+add\b", cmd) is not None
+    has_commit = re.search(r"\bgit\s+commit\b", cmd) is not None
+    commit_all = re.search(r"\bgit\s+commit\b[^;&|]*\s(?:-[A-Za-z]*a[A-Za-z]*|--all)\b", cmd)
+    if kind == "commit":
+        scans = [["worktree"] if (has_add or commit_all) else ["staged"]]
+    else:
+        scans = [["range", "origin/main"]]
+        if has_add or has_commit:
+            scans.append(["worktree"])
+    rule = {"commit": "commit", "push": "push", "pr": "pr"}[kind]
+    for args in scans:
+        scan = run_dlp(*args)
+        if scan.returncode != 0:
+            deny(
+                "PreToolUse",
+                f"{rule}-dlp",
+                "restricted data or secrets found; remove or tokenise them before "
+                f"{kind}.\n" + scan.stdout.strip(),
+                "Bash",
+                cmd,
+            )
+    ok, tail = tests_green()
+    if not ok:
+        deny("PreToolUse", f"{rule}-tests", f"tests must pass before {kind}.\n" + tail, "Bash", cmd)
 
 
 def main() -> None:
@@ -96,8 +123,12 @@ def main() -> None:
         ask(ev, "delete-files", "deleting files needs human approval.", tool, cmd)
     if INSTALL.search(cmd):
         ask(ev, "package-install", "installs reach a package index; approve it.", tool, cmd)
-    if re.search(r"git\s+commit\b", cmd):
-        commit_gate(cmd)
+    if re.search(r"\bgit\s+commit\b", cmd):
+        outgoing_gates(cmd, "commit")
+    if re.search(r"\bgit\s+push\b", cmd):
+        outgoing_gates(cmd, "push")
+    if re.search(r"\bgh\s+pr\s+create\b", cmd):
+        outgoing_gates(cmd, "pr")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,8 @@ into logs, prompts or terminal output.
 CLI:
   dlp.py scan FILE...        scan files, exit 1 on findings
   dlp.py staged              scan added lines of `git diff --cached`
+  dlp.py worktree            scan staged + unstaged changes + untracked files
+  dlp.py range [BASE]        scan commits in BASE...HEAD (default origin/main)
   dlp.py tracked             scan every git-tracked text file
 """
 
@@ -121,6 +123,29 @@ def _report(label: str, findings: list[Finding]) -> int:
     return 1 if findings else 0
 
 
+def _scan_diff(diff: str) -> int:
+    """Scan only the added lines of a unified diff, grouped by file."""
+    current = ""
+    added: dict[str, list[str]] = {}
+    for line in diff.splitlines():
+        if line.startswith("+++ b/"):
+            current = line[6:]
+        elif line.startswith("+") and not line.startswith("+++"):
+            added.setdefault(current, []).append(line[1:])
+    rc = 0
+    for path, lines in added.items():
+        rc |= _report(path, scan_text("\n".join(lines)))
+    return rc
+
+
+def _scan_file(path: str) -> int:
+    try:
+        text = open(path, encoding="utf-8").read()
+    except (OSError, UnicodeDecodeError):
+        return 0
+    return _report(path, scan_text(text))
+
+
 def main(argv: list[str]) -> int:
     cmd = argv[1] if len(argv) > 1 else ""
     rc = 0
@@ -132,15 +157,28 @@ def main(argv: list[str]) -> int:
                 continue
             rc |= _report(path, scan_text(text))
     elif cmd == "staged":
-        current = ""
-        added: dict[str, list[str]] = {}
-        for line in _git("diff", "--cached", "-U0", "--no-color").splitlines():
-            if line.startswith("+++ b/"):
-                current = line[6:]
-            elif line.startswith("+") and not line.startswith("+++"):
-                added.setdefault(current, []).append(line[1:])
-        for path, lines in added.items():
-            rc |= _report(path, scan_text("\n".join(lines)))
+        rc |= _scan_diff(_git("diff", "--cached", "-U0", "--no-color"))
+    elif cmd == "worktree":
+        # Everything a commit could pick up: staged + unstaged changes + untracked files.
+        head = subprocess.run(
+            ["git", "rev-parse", "--verify", "-q", "HEAD"], capture_output=True, check=False
+        )
+        diff_args = ["diff", "HEAD"] if head.returncode == 0 else ["diff", "--cached"]
+        rc |= _scan_diff(_git(*diff_args, "-U0", "--no-color"))
+        for path in _git("ls-files", "--others", "--exclude-standard").splitlines():
+            rc |= _scan_file(path)
+    elif cmd == "range":
+        # Commits that would leave the machine: BASE...HEAD (default origin/main).
+        base = argv[2] if len(argv) > 2 else "origin/main"
+        ok = subprocess.run(
+            ["git", "rev-parse", "--verify", "-q", base], capture_output=True, check=False
+        )
+        if ok.returncode != 0:
+            print(f"range: base '{base}' not found; scanning all tracked files", file=sys.stderr)
+            for path in _git("ls-files").splitlines():
+                rc |= _scan_file(path)
+        else:
+            rc |= _scan_diff(_git("diff", f"{base}...HEAD", "-U0", "--no-color"))
     elif cmd == "tracked":
         for path in _git("ls-files").splitlines():
             try:

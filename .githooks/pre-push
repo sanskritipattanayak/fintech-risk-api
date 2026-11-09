@@ -1,0 +1,15 @@
+#!/bin/sh
+# Git-level backstop: scans every commit that would leave the machine, so a commit made
+# with --no-verify, a cherry-pick or an amend still cannot reach the remote.
+root=$(git rev-parse --show-toplevel)
+dlp="$root/.claude/hooks/dlp.py"
+if git rev-parse --verify -q origin/main >/dev/null; then
+  python3 "$dlp" range origin/main || { echo "pre-push: restricted data in outgoing commits. Push aborted." >&2; exit 1; }
+else
+  python3 "$dlp" tracked || { echo "pre-push: restricted data in tracked files. Push aborted." >&2; exit 1; }
+fi
+if [ -d "$root/tests" ]; then
+  py="$root/.venv/bin/python"; [ -x "$py" ] || py=python3
+  (cd "$root" && "$py" -m pytest -q -x); rc=$?
+  if [ $rc -ne 0 ] && [ $rc -ne 5 ]; then echo "pre-push: tests failing. Push aborted." >&2; exit 1; fi
+fi

@@ -74,3 +74,17 @@ def test_amount_limit_is_strictly_greater_and_decimal() -> None:
 def test_amount_limit_rejects_float() -> None:
     with pytest.raises(TypeError):
         amount_exceeds_limit(100.0, Decimal("100"))  # type: ignore[arg-type]
+
+
+def test_overnight_utc_hours_count_each_attempt_once() -> None:
+    """Regression: events at 00:00-05:00 UTC were recorded three times (ledger-day mirror)."""
+    v = VelocityChecker(max_txns=5, window=timedelta(minutes=10))
+    t = datetime(2026, 3, 2, 1, 0, tzinfo=UTC)
+    results = [v.check_and_record("card_aaaaaaaa", t + timedelta(seconds=i)) for i in range(5)]
+    assert results == [True] * 5
+    assert v.count_in_window("card_aaaaaaaa", t + timedelta(seconds=4)) == 5
+
+
+def test_amount_limit_distinguishes_values_float_cannot() -> None:
+    """Regression: float() collapsed these two distinct amounts into the same value."""
+    assert amount_exceeds_limit(Decimal("9007199254740993"), Decimal("9007199254740992"))

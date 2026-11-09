@@ -1,7 +1,7 @@
 ---
 name: log-triage
 description: Read structured app logs, cluster errors and anomalies, and produce a redacted incident report with a root-cause hypothesis and severity. Use when an alert fires or the user asks why declines/errors spiked. Read-only.
-allowed-tools: Read(logs/*), Grep, Glob, Skill(fintech-data-check), Write(incidents/*)
+allowed-tools: Read(logs/*), Grep, Glob, Skill(fintech-data-check), Edit(incidents/*)
 ---
 
 # log-triage

@@ -13,6 +13,9 @@ Python 3.12, FastAPI, pytest, scikit-learn, pandas.
 ## Layout
 - `app/main.py` API routes
 - `app/velocity.py` velocity check (txns per card per window)
+- `app/decision.py` shared decision logic (velocity, then model) used by the API and the simulator
+- `app/logging_config.py` JSON event log with an allow-list of fields (no bodies, no PII)
+- `app/simulate.py` traffic simulator that runs the real decision code; `python scripts/generate_logs.py` rewrites `logs/app.log`
 - `app/model.py` fraud model (scikit-learn) and synthetic data generator
 - `data/transactions.csv` synthetic data (regenerate with `python scripts/generate_data.py`)
 - `scripts/` helper scripts; `tests/` pytest suite; `pyproject.toml` ruff + pytest config

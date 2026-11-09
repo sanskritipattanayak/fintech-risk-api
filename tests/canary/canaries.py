@@ -6,7 +6,7 @@ All are public test values or obviously fake.
 """
 
 PAN = "4111" + "1111" + "1111" + "1111"  # public Visa test number
-PAN_SPACED = "4111 1111 1111 1111"[:0] + " ".join(["4111", "1111", "1111", "1111"])
+PAN_SPACED = " ".join(["4111", "1111", "1111", "1111"])
 SSN = "078-05-" + "1120"
 AWS_KEY = "AKIA" + "IOSFODNN7EXAMPLE"  # AWS documentation example
 PRIVATE_KEY = "-----BEGIN " + "RSA PRIVATE KEY-----"

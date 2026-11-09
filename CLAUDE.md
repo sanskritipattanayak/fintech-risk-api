@@ -13,8 +13,9 @@ Python 3.12, FastAPI, pytest, scikit-learn, pandas.
 ## Layout
 - `app/main.py` API routes
 - `app/velocity.py` velocity check (txns per card per window)
-- `app/model.py` fraud model (scikit-learn)
-- `data/transactions.csv` synthetic data
+- `app/model.py` fraud model (scikit-learn) and synthetic data generator
+- `data/transactions.csv` synthetic data (regenerate with `python scripts/generate_data.py`)
+- `scripts/` helper scripts; `tests/` pytest suite; `pyproject.toml` ruff + pytest config
 - `logs/app.log` structured JSON logs
 
 ## Conventions

@@ -17,3 +17,6 @@ __pycache__/
 # Local tooling
 .claude/settings.local.json
 .DS_Store
+
+# Local audit trail
+.claude/audit/

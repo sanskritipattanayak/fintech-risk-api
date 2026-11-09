@@ -1,7 +1,7 @@
 ---
 name: fintech-data-check
 description: Verify that data, fixtures, logs and diffs contain only synthetic data and obey money/time rules. Use before committing, before sending logs to a model, and when adding fixtures. Shared by both flows.
-allowed-tools: Read, Grep, Glob, Bash(pytest*), Bash(python -I*)
+allowed-tools: Read, Grep, Glob, Bash(pytest *), Bash(python -I *)
 ---
 
 # fintech-data-check

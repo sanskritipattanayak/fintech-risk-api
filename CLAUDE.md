@@ -41,8 +41,15 @@ Python 3.12, FastAPI, pytest, scikit-learn, pandas.
 ## Human gates
 G1 spec, G2 plan, G3 ship, G4 triage, G5 PR review (CODEOWNERS), G6 prod approval. Never skip or self-approve a gate.
 
-## Hooks (enforced by the harness, configured in `.claude/settings.json`)
-Prompt PII scan, path/command deny rules, post-edit lint + tests, commit-time secret scan, Stop blocked on red tests, audit log on PR creation. If a hook blocks you, fix the cause; do not work around it.
+## Hooks (enforced by the harness, configured in `.claude/settings.json`, scripts in `.claude/hooks/`)
+- `UserPromptSubmit`: blocks prompts containing PAN, SSN, keys or real emails.
+- `PreToolUse`: path policy (`.env`, `secrets/`, presenter notes, writes outside the project; guardrail files need human approval) and command policy (no network tools, no push to main, no force push, no merge; asks before installs, deletes, history rewrites; `git commit` runs a staged-diff DLP scan and the tests).
+- Commit, push and `gh pr create` are gated before they run: DLP on the working tree (for chained `git add && git commit`) and on the outgoing commits (`origin/main...HEAD`), plus a green test run.
+- Git-level backstop in `.githooks/` (pre-commit, pre-push; enabled automatically at session start): applies however a commit or push is made, including `--no-verify` commits and cherry-picks. CI re-scans every tracked file.
+- `PostToolUse`: DLP on written files, ruff, float-for-money check.
+- `Stop`: blocked while tests are red.
+- `SessionStart`: prints the active policy. Decisions are logged (hashes only) to `.claude/audit/audit.jsonl`.
+If a hook blocks you, fix the cause; do not work around it. Details in `docs/guardrails.md`.
 
 ## Directories
 `docs/prd/` PRDs, `docs/specs/` specs and trace files, `incidents/` triage reports.

@@ -1,7 +1,7 @@
 ---
 name: secure-ship
 description: Pre-commit security and quality gate, then commit, push and open a PR for human review. Use after spec-to-code or bugfix-pr finishes. Never merges and never deploys.
-allowed-tools: Read, Grep, Glob, Bash(pytest*), Bash(ruff*), Bash(git status*), Bash(git diff*), Bash(git add*), Bash(git commit*), Bash(git push origin feat/*), Bash(git push origin fix/*), Bash(gh pr create*), Skill(fintech-data-check), Skill(security-review)
+allowed-tools: Read, Grep, Glob, Bash(pytest *), Bash(ruff *), Bash(git status *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git push origin feat/*), Bash(git push origin fix/*), Bash(gh pr create *), Skill(fintech-data-check), Skill(security-review)
 ---
 
 # secure-ship

@@ -99,7 +99,8 @@ def build_features(
         raise ValueError("timestamp must be timezone-aware")
     hour = timestamp.astimezone(UTC).hour
     code = CATEGORIES.index(category) if category in CATEGORIES else len(CATEGORIES)
-    return [float(np.log1p(float(amount))), hour, int(is_foreign), card_age_days, code]
+    log_amount = float(np.log1p(float(amount)))  # money-float-ok: documented model boundary
+    return [log_amount, hour, int(is_foreign), card_age_days, code]
 
 
 def _frame_to_matrix(df: pd.DataFrame) -> np.ndarray:

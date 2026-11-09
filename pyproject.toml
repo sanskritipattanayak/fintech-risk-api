@@ -8,3 +8,7 @@ select = ["E", "F", "I", "UP", "B", "DTZ"]  # DTZ flags naive datetimes
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff.lint.per-file-ignores]
+# Hooks run under whatever python3 the machine has (3.9+), so no datetime.UTC alias.
+".claude/hooks/*" = ["UP017"]

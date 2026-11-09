@@ -1,7 +1,7 @@
 ---
 name: prd-to-spec
 description: Turn a product requirements doc (PRD) into a reviewable engineering spec with fintech acceptance criteria, data classification and a test plan. Use when a PRD or feature request is dropped in docs/prd/ or the user says "spec this". Stops for human approval before any code.
-allowed-tools: Read, Grep, Glob, Write(docs/specs/*)
+allowed-tools: Read, Grep, Glob, Edit(docs/specs/*)
 ---
 
 # prd-to-spec

@@ -1,7 +1,7 @@
 ---
 name: bugfix-pr
 description: Given an auto-fix-eligible incident report, reproduce with a failing test, make the minimal fix, and hand off to secure-ship for a PR. Runs headless in the automated pipeline or interactively.
-allowed-tools: Read, Grep, Glob, Edit, Write(app/*), Write(tests/*), Bash(pytest*), Bash(ruff*), Bash(git checkout -b fix/*), Bash(git diff*), Skill(fintech-data-check), Skill(secure-ship)
+allowed-tools: Read, Grep, Glob, Edit(app/*), Edit(tests/*), Bash(pytest *), Bash(ruff *), Bash(git checkout -b fix/*), Bash(git diff *), Skill(fintech-data-check), Skill(secure-ship)
 ---
 
 # bugfix-pr

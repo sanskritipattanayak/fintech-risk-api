@@ -1,7 +1,7 @@
 ---
 name: spec-to-code
 description: Implement an APPROVED spec test-first on a feature branch. Use after docs/specs/<feature>.spec.md has an Approved-by header. Refuses if the spec is unapproved.
-allowed-tools: Read, Grep, Glob, Edit, Write(app/*), Write(tests/*), Bash(pytest*), Bash(ruff*), Bash(git checkout -b*), Bash(git status*), Bash(git diff*)
+allowed-tools: Read, Grep, Glob, Edit(app/*), Edit(tests/*), Bash(pytest *), Bash(ruff *), Bash(git checkout -b *), Bash(git status *), Bash(git diff *)
 ---
 
 # spec-to-code
@@ -28,7 +28,7 @@ Flow 1, stage 2. Turns an approved spec into code and tests on a branch `feat/<f
 - Synthetic data only; any new fixture goes through `fintech-data-check`.
 
 ## Hooks relied on
-- `PostToolUse` on Edit/Write: runs ruff, a float-for-money check and the fast test subset.
+- `PostToolUse` on Edit/Write: DLP scan of the written file, ruff (incl. naive-datetime rule) and a float-for-money check. Tests are gated at commit and at `Stop`, so red-first TDD still works.
 - `PreToolUse`: blocks reads of `.env` and `secrets/`, blocks network tools.
 - `Stop`: refuses to end the turn with failing tests.
 

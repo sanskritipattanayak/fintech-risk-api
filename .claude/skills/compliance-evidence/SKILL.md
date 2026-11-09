@@ -1,7 +1,7 @@
 ---
 name: compliance-evidence
 description: Assemble an audit-ready evidence pack for a PR (controls exercised, gate approvals, test and security results, data-handling attestations). Use at the end of secure-ship for both flows, or when an auditor asks what the AI did.
-allowed-tools: Read, Grep, Glob, Write(evidence/*), Skill(fintech-data-check)
+allowed-tools: Read, Grep, Glob, Edit(evidence/*), Skill(fintech-data-check)
 ---
 
 # compliance-evidence

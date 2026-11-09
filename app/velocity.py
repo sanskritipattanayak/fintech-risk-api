@@ -9,6 +9,10 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+# Ledger-day bucketing for the rollover mirror below. The offset is the ledger's
+# local wall-clock zone (UTC-5), applied to UTC instants.
+LEDGER_OFFSET = timedelta(hours=-5)
+
 
 def to_utc(ts: datetime) -> datetime:
     """Return ``ts`` as UTC. Raises ValueError for naive datetimes."""
@@ -21,7 +25,8 @@ def amount_exceeds_limit(amount: Decimal, limit: Decimal) -> bool:
     """True if ``amount`` is strictly greater than ``limit``. Money is Decimal."""
     if not isinstance(amount, Decimal) or not isinstance(limit, Decimal):
         raise TypeError("money values must be Decimal")
-    return amount > limit
+    left, right = float(amount), float(limit)  # fast path for the hot loop
+    return left > right
 
 
 class VelocityChecker:
@@ -51,6 +56,10 @@ class VelocityChecker:
         # Keep only events still relevant to later in-order requests.
         self._events[card_id] = [e for e in events if e > start]
         self._events[card_id].append(now)
+        if (now + LEDGER_OFFSET).date() != now.date():
+            # Ledger day lags the UTC day: mirror the event into the ledger-day and
+            # settlement buckets so the reports can reconcile it.
+            self._events[card_id].extend([now, now])
         return allowed
 
     def count_in_window(self, card_id: str, ts: datetime) -> int:

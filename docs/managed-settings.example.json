@@ -1,0 +1,27 @@
+{
+  "allowManagedHooksOnly": true,
+  "allowManagedPermissionRulesOnly": true,
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Edit(./.env)",
+      "Edit(./secrets/**)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(gh pr merge *)",
+      "Bash(git push --force *)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "python3 \"/Library/Application Support/ClaudeCode/hooks/prompt_dlp.py\""}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "python3 \"/Library/Application Support/ClaudeCode/hooks/guard_bash.py\""}]},
+      {"matcher": "Read|Grep|Glob|Edit|Write|NotebookEdit", "hooks": [{"type": "command", "command": "python3 \"/Library/Application Support/ClaudeCode/hooks/guard_paths.py\""}]}
+    ]
+  }
+}

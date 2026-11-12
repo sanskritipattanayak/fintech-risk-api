@@ -17,8 +17,9 @@ from tests.canary import canaries
 
 ROOT = Path(__file__).resolve().parents[2]
 HOOKS = ROOT / ".claude" / "hooks"
+# Drop inherited GIT_* (e.g. GIT_DIR exported to hooks) so scratch repos never touch this one.
 GIT_ENV = {
-    **os.environ,
+    **{k: v for k, v in os.environ.items() if not k.startswith("GIT_")},
     "GIT_AUTHOR_NAME": "t",
     "GIT_AUTHOR_EMAIL": "t@example.test",
     "GIT_COMMITTER_NAME": "t",
@@ -62,6 +63,34 @@ def commit_canary_bypassing_gates(repo: Path) -> None:
     (repo / "fixture.csv").write_text(canaries.FIXTURE_ROW + "\n")
     git(repo, "add", "fixture.csv")
     git(repo, "-c", "core.hooksPath=/dev/null", "commit", "-q", "-m", "sneaky")
+
+
+def test_scratch_repos_ignore_inherited_git_dir(tmp_path: Path) -> None:
+    # Git exports GIT_DIR to hooks. When pre-push ran this suite, make_repo's `git init`
+    # re-initialised the real repository as bare. A decoy worktree stands in for it here.
+    (tmp_path / "decoy_main").mkdir()
+    decoy = make_repo(tmp_path / "decoy_main")
+    git(decoy, "worktree", "add", "-q", str(tmp_path / "decoy"), "-b", "wt")
+    decoy = tmp_path / "decoy"
+    refs_before = git(decoy, "for-each-ref").stdout
+    gitdir = git(decoy, "rev-parse", "--absolute-git-dir").stdout.strip()
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    code = (
+        "from pathlib import Path; from tests.canary.test_gates import make_repo; "
+        f"make_repo(Path({str(scratch)!r}))"
+    )
+    r = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=ROOT,
+        env={**env, "GIT_DIR": gitdir},
+        capture_output=True,
+        text=True,
+    )
+    assert r.returncode == 0, r.stderr[-500:]
+    assert git(decoy, "config", "--get", "core.bare").stdout.strip() == "false"
+    assert git(decoy, "for-each-ref").stdout == refs_before
 
 
 # ---- Claude PreToolUse layer ---------------------------------------------------------

@@ -14,7 +14,9 @@ HOOKS = Path(__file__).resolve().parents[2] / ".claude" / "hooks"
 
 
 def run_hook(script: str, payload: dict, project: Path) -> subprocess.CompletedProcess:
-    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(project)}
+    # Drop inherited GIT_* so a run from a git hook cannot point git at the real repo.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["CLAUDE_PROJECT_DIR"] = str(project)
     return subprocess.run(
         [sys.executable, str(HOOKS / script)],
         input=json.dumps(payload),
@@ -123,9 +125,10 @@ def test_bash_allowed(tmp_path: Path, cmd: str) -> None:
 
 
 def test_commit_with_staged_canary_is_blocked(tmp_path: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    clean = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True, env=clean)
     (tmp_path / "fixture.csv").write_text(canaries.FIXTURE_ROW + "\n")
-    subprocess.run(["git", "add", "fixture.csv"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "fixture.csv"], cwd=tmp_path, check=True, env=clean)
     r = run_hook("guard_bash.py", bash('git commit -m "add fixture"'), tmp_path)
     assert r.returncode == 2 and "commit-dlp" in r.stderr
     assert canaries.PAN not in r.stderr

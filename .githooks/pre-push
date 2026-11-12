@@ -10,6 +10,9 @@ else
 fi
 if [ -d "$root/tests" ]; then
   py="$root/.venv/bin/python"; [ -x "$py" ] || py=python3
-  (cd "$root" && "$py" -m pytest -q -x); rc=$?
+  # Git exports GIT_DIR and friends to hooks; scrub them so the canary tests' throwaway
+  # repos cannot act on (and corrupt the config of) this repository.
+  (cd "$root" && env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE -u GIT_COMMON_DIR \
+    -u GIT_OBJECT_DIRECTORY -u GIT_PREFIX "$py" -m pytest -q -x); rc=$?
   if [ $rc -ne 0 ] && [ $rc -ne 5 ]; then echo "pre-push: tests failing. Push aborted." >&2; exit 1; fi
 fi

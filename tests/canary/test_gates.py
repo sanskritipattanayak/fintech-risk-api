@@ -17,8 +17,11 @@ from tests.canary import canaries
 
 ROOT = Path(__file__).resolve().parents[2]
 HOOKS = ROOT / ".claude" / "hooks"
+# Scrub inherited repo-pointing variables (set when run from a git hook) so these tests'
+# throwaway repos can never act on the real repository.
+_INHERITED = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
 GIT_ENV = {
-    **os.environ,
+    **_INHERITED,
     "GIT_AUTHOR_NAME": "t",
     "GIT_AUTHOR_EMAIL": "t@example.test",
     "GIT_COMMITTER_NAME": "t",

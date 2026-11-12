@@ -1,8 +1,6 @@
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
-import pytest
-
 from app.simulate import simulate
 
 START = datetime(2026, 3, 1, tzinfo=UTC)
@@ -24,10 +22,6 @@ def test_records_cover_24h_utc_in_time_order_with_valid_schema() -> None:
         assert r["level"] == ("INFO" if r["event"] == "APPROVED" else "WARNING")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="seeded demo defect in app/velocity.py (INC midnight spike); remove when fixed",
-)
 def test_correct_code_has_no_midnight_spike() -> None:
     records = simulate(n=1500, seed=3, start=START)
     declines = Counter(

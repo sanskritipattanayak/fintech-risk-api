@@ -11,10 +11,12 @@ import pytest
 from tests.canary import canaries
 
 HOOKS = Path(__file__).resolve().parents[2] / ".claude" / "hooks"
+# Drop inherited GIT_* (e.g. GIT_DIR exported to hooks) so scratch repos never touch this one.
+CLEAN_ENV = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
 
 
 def run_hook(script: str, payload: dict, project: Path) -> subprocess.CompletedProcess:
-    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(project)}
+    env = {**CLEAN_ENV, "CLAUDE_PROJECT_DIR": str(project)}
     return subprocess.run(
         [sys.executable, str(HOOKS / script)],
         input=json.dumps(payload),
@@ -123,9 +125,9 @@ def test_bash_allowed(tmp_path: Path, cmd: str) -> None:
 
 
 def test_commit_with_staged_canary_is_blocked(tmp_path: Path) -> None:
-    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, env=CLEAN_ENV, check=True)
     (tmp_path / "fixture.csv").write_text(canaries.FIXTURE_ROW + "\n")
-    subprocess.run(["git", "add", "fixture.csv"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "add", "fixture.csv"], cwd=tmp_path, env=CLEAN_ENV, check=True)
     r = run_hook("guard_bash.py", bash('git commit -m "add fixture"'), tmp_path)
     assert r.returncode == 2 and "commit-dlp" in r.stderr
     assert canaries.PAN not in r.stderr
